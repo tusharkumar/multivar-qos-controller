@@ -1,0 +1,58 @@
+mpeg2enc MVSRT experiments
+9 => neither
+10 => modified budget-allocate (so C refines even when not exceeded bounds)
+11 => force-model-estimation (probabilistic reduction in LLSE)
+12 => both
+13 => both of previous, frame_budget = 5% (instead of 1%)
+14 => (run 10) + (2% frame-budget)
+17 => affine, no subtract
+17.6 => uncommented reset-betas when new C constructed (but shouldn't matter, due to forced beta resets)
+18   => disabled adaptive betas, affine=true
+18.1 => enabled  adaptive betas, affine=true
+19.1 => moved adaptive_state_transition() to before update_modeli() and update_controller(),
+         commented out proj_st from update_controller (as adaptive_state_transition() would already executed),
+         added state re-initialization to update_controllerZO()
+19.2 => 19.1 + disabled adaptive betas
+20.1 => new update_controller() using refine_input_costs() scheme (Dec 14, 2012 - Jan 6, 2013)
+20.2-20.4 => repeat for comparison
+
+23.1 => replaced incremental-LQR with fresh N=1 LQR solve for each C refinement step
+23.2 => enabled adaptive betas
+24.* => added adaptive length of random input exploration. Variants force d=1 (adaptive length) and adaptive betas
+25.* => added frequent M <- Mp whenever Mp exhibits lower error. Variants for d=1 and adaptive betas.
+26.* => new update_model() that systematically estimated Mp and updates M based on convergent sum metrics
+        -- mmf variants 26.3, 26.4 ==> update_model() tests all_x_min_max_differ to update M from Mp on Advantage,
+                     and forcedExploration == false is now needed to allow new Mp to be estimated
+27.1fixes => fix all_x_min_max_differ to all_x_min_max_span, and square the norm
+27.2nfe   => new forced exploration algorithm, no adaptive betas
+27.3nfeab => with adaptive betas
+27.4      => 27.3 + budget=2% instead of 1%
+28.1      => forced exploration now uses separate "current" (10*W frames) and "estimated" (for all of M) metrics for SR and alpha.
+29.1      => shifted to mean, std history coverage from min-max-based history coverage criterion
+30.1      => fixed mean, std incremental stats to be more robust
+30.2      => changed coverage threshold from 0.5 to 0.3
+31        =>
+32        => added maxswing criterion to coverage-test, minor additional case in input_explorer
+33        => added L_min (forcing L_min = 32 for mpeg2enc variants); coverage f = 0.5, g = (1+gamma)/2
+33.2      => L_min = 64 for mpeg2enc variants
+34.0hist0 => achievability stats updated every 10 * W model-driven frames, min history = 0 (i.e., history like before)
+34.1hist70 => same + min history = 70 (10 * W)
+34.2hist35 => same + min history = 35 (5 * W)
+35.1      => new stability length and coverage length estimations to drive resize_history() (disabled min history)
+36.1      => new resize_history() based on Ls, t_bcp and Lc metrics
+37.1      => PFE cluster length estimation from H statistics.
+38.1      => cleaned up frame-budget.
+38.2      => repeat (except for mpeg2enc: accidentally clobbered by 38.3)
+38.3      => incorporated num_clusters to divide L_PFE (to ensure q doesn't become too small when theta is non-trivial)
+39.1      => fixed stabilitymetrics to use OB_importance; theta_SR limited <= 0.10 (instead of 0.50); theta_alpha disabled; PFE d_high = 3 * d_peak (instead of 2 * d_peak); betas disabled
+39.2      => enabled betas; fixed betas to persist across C refinement, reset only on new M
+39.3      => improved beta updates to more precisely track model-quality: prevent updates for W frames after exploration, reset metrics (but not betas) across exploration
+40.1      => PFE cluster of length L completes only after ensuring coverage;
+             and, unbiased input exploration of all input dimensions regardless of current coverage
+41.1      => various fixes for assert failures, restricted model-estimation for balance to half of frame-budget (to not consume all the budget when balance is not achievable),
+             beta update skipped on frames overridding control-inputs
+42.1      => Replaced alpha/tau for MSEQ theta with scoped SR to control theta.
+             Changed sluggishness correction factor be sqrt 1/beta when beta < 1 (to compensate faster for excessive Osc correction)
+42.2, 42.3 repeats
+43.1      => PFE cluster group
+43.2      => repeat
